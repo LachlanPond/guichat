@@ -1,8 +1,9 @@
 # Variables
 CXX = g++
 STD = -std=c++17
-SRC = src/guichat.cpp
-OBJ = guichat.o
+SRC = src/main.cpp src/guichat.cpp
+DEP = src/guichat.h
+OBJ = main.o guichat.o
 EXE = guichat
 PKG = `pkg-config --cflags --libs gtkmm-4.0`
 
@@ -10,7 +11,7 @@ PKG = `pkg-config --cflags --libs gtkmm-4.0`
 $(EXE): $(OBJ)
 	$(CXX) -o $(EXE) $(OBJ) $(PKG) $(STD)
 
-$(OBJ): $(SRC)
+$(OBJ): $(SRC) $(DEP)
 	$(CXX) -c $(SRC) $(PKG) $(STD)
 
 # Phony targets
