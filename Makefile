@@ -1,6 +1,6 @@
 # Variables
 CXX = g++
-STD = -std=c++17
+STD = -std=c++20
 SRC = src/main.cpp src/guichat.cpp
 DEP = src/guichat.h
 OBJ = main.o guichat.o

@@ -10,19 +10,22 @@
 #include <gtkmm/window.h>
 
 class GUIChat : public Gtk::Window {
-	std::string name;
-	std::string ip;
+	Glib::ustring name;
+	Glib::ustring ip;
 
 public:
 	GUIChat();
-	void setName(std::string name);
-	std::string getName();
-	void setIP(std::string ip);
-	std::string getIP();
+	void setName(Glib::ustring name);
+	Glib::ustring getName();
+	void setIP(Glib::ustring ip);
+	Glib::ustring getIP();
+	void sendChatMessage(Glib::ustring msg);
+	void sendChatMessage(Glib::ustring msg, std::string colour);
 
 protected:
 	// Signal handlers:
 	void on_connect_button_clicked();
+	void on_msg_entry_submit();
 
 	// Member widgets:
 	Gtk::Box m_VBox, m_Name_HBox, m_IP_HBox;

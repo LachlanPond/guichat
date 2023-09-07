@@ -32,6 +32,7 @@ GUIChat::GUIChat() :
 
 	m_VBox.append(m_Connect_Button);
 
+	m_Chat_TextView.set_editable(false);
 	m_Chat_Frame.set_child(m_Chat_TextView);
 	m_Chat_Frame.set_size_request(-1,500);
 
@@ -39,8 +40,12 @@ GUIChat::GUIChat() :
 
 	m_VBox.append(m_Msg_Entry);
 
+	// Signal event listeners
 	m_Connect_Button.signal_clicked().connect(sigc::mem_fun(*this,
 		&GUIChat::on_connect_button_clicked));
+
+	m_Msg_Entry.signal_activate().connect(sigc::mem_fun(*this,
+		&GUIChat::on_msg_entry_submit));
 
 	// Pressing 'Enter' triggers the connect button
 	m_Name_Entry.set_activates_default();
@@ -49,24 +54,53 @@ GUIChat::GUIChat() :
 	set_default_widget(m_Connect_Button);
 };
 
-void GUIChat::setName(std::string name) {
+void GUIChat::setName(Glib::ustring name) {
 	this->name = name;
-	std::cout << this->name << std::endl;
 }
 
-std::string GUIChat::getName() {
+Glib::ustring GUIChat::getName() {
 	return this->name;
 }
 
-void GUIChat::setIP(std::string ip) {
+void GUIChat::setIP(Glib::ustring ip) {
 	this->ip = ip;
 }
 
-std::string GUIChat::getIP() {
+Glib::ustring GUIChat::getIP() {
 	return this->ip;
 }
 
+void GUIChat::sendChatMessage(Glib::ustring msg, std::string colour) {
+	Glib::RefPtr<Gtk::TextBuffer> text_buffer = m_Chat_TextView.get_buffer();
+
+	text_buffer->insert_markup(text_buffer->end(),
+		"<span color=\"" + colour + "\">" + msg + "</span>\n");
+}
+
+void GUIChat::sendChatMessage(Glib::ustring msg) {
+	Glib::RefPtr<Gtk::TextBuffer> text_buffer = m_Chat_TextView.get_buffer();
+
+	text_buffer->insert(text_buffer->end(),msg + "\n");
+}
+
+// Event functions
 void GUIChat::on_connect_button_clicked() {
 	setName(m_Name_Entry.get_text());
 	setIP(m_IP_Entry.get_text());
+
+	if (this->name == "") {
+		GUIChat::sendChatMessage("Your name cannot be blank", "red");
+	}
+
+	if (this->ip == "") {
+		GUIChat::sendChatMessage("The server address cannot be blank", "red");
+	}
+}
+
+void GUIChat::on_msg_entry_submit() {
+	Glib::ustring msg;
+	msg = m_Msg_Entry.get_text();
+	m_Msg_Entry.set_text("");
+
+	GUIChat::sendChatMessage(this->name + ": " + msg);
 }
