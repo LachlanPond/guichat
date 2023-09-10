@@ -34,6 +34,9 @@ int main(int argc, char* argv[]) {
 
 void handleClient(int& server_sock, int client_sock) {
 	std::cout << "client thread started" << std::endl;
+	char name_buffer[24];
+	read(client_sock, name_buffer, sizeof(name_buffer));
+	std::cout << "received: " << name_buffer << std::endl;
 	close(client_sock);
 	std::cout << "Socket closed :)" << std::endl;
 	return;

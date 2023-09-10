@@ -91,6 +91,9 @@ void GUIChat::on_connect_button_clicked() {
 	if (this->connected) {
 		::close(this->client_socket);
 		m_Connect_Button.set_label("Connect");
+		GUIChat::sendChatMessage("Disconnected from the server", "red");
+		m_Name_Entry.set_editable(true);
+		m_IP_Entry.set_editable(true);
 		this->connected = false;
 		return;
 	}
@@ -119,12 +122,28 @@ void GUIChat::on_connect_button_clicked() {
 	connect(this->client_socket, (struct sockaddr *)&server_address, sizeof(server_address));
 	this->connected = true;
 	m_Connect_Button.set_label("Disconnect");
+
+	char name_buffer[24];
+	std::size_t length = this->name.copy(name_buffer,sizeof(name_buffer)-1,0);
+	name_buffer[length] = '\0';
+	::send(this->client_socket, name_buffer, sizeof(name_buffer), 0);
+
+	m_Name_Entry.set_editable(false);
+	m_IP_Entry.set_editable(false);
+
+	GUIChat::sendChatMessage("Connected to the server (" + this->ip + ")", "green");
 }
 
 void GUIChat::on_msg_entry_submit() {
 	Glib::ustring msg;
+	char msg_buffer[512];
 	msg = m_Msg_Entry.get_text();
 	m_Msg_Entry.set_text("");
 
-	GUIChat::sendChatMessage(this->name + ": " + msg);
+	std::size_t length = this->name.copy(msg_buffer,sizeof(msg_buffer),0);
+	msg_buffer[length] = '\0';
+
+	::send(this->client_socket, msg_buffer, sizeof(msg_buffer), 0);
+
+	// GUIChat::sendChatMessage(this->name + ": " + msg);
 }
