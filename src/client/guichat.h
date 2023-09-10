@@ -13,6 +13,9 @@ class GUIChat : public Gtk::Window {
 	Glib::ustring name;
 	Glib::ustring ip;
 
+	int client_socket;
+	bool connected;
+
 public:
 	GUIChat();
 	void setName(Glib::ustring name);

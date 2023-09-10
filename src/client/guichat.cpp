@@ -1,6 +1,8 @@
 
 #include "guichat.h"
 #include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 GUIChat::GUIChat() : 
 	m_VBox(Gtk::Orientation::VERTICAL),
@@ -34,7 +36,7 @@ GUIChat::GUIChat() :
 
 	m_Chat_TextView.set_editable(false);
 	m_Chat_Frame.set_child(m_Chat_TextView);
-	m_Chat_Frame.set_size_request(-1,500);
+	m_Chat_Frame.set_size_request(200,500);
 
 	m_VBox.append(m_Chat_Frame);
 
@@ -52,6 +54,7 @@ GUIChat::GUIChat() :
 	m_IP_Entry.set_activates_default();
 
 	set_default_widget(m_Connect_Button);
+	this->connected = false;
 };
 
 void GUIChat::setName(Glib::ustring name) {
@@ -85,16 +88,37 @@ void GUIChat::sendChatMessage(Glib::ustring msg) {
 
 // Event functions
 void GUIChat::on_connect_button_clicked() {
-	setName(m_Name_Entry.get_text());
-	setIP(m_IP_Entry.get_text());
+	if (this->connected) {
+		::close(this->client_socket);
+		m_Connect_Button.set_label("Connect");
+		this->connected = false;
+		return;
+	}
+
+	this->name = m_Name_Entry.get_text();
+	this->ip = m_IP_Entry.get_text();
 
 	if (this->name == "") {
 		GUIChat::sendChatMessage("Your name cannot be blank", "red");
+		return;
 	}
 
 	if (this->ip == "") {
 		GUIChat::sendChatMessage("The server address cannot be blank", "red");
+		return;
 	}
+
+	sockaddr_in server_address;
+
+	this->client_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+	server_address.sin_family = AF_INET;
+	server_address.sin_port = htons(8081);
+	server_address.sin_addr.s_addr = INADDR_ANY;
+
+	connect(this->client_socket, (struct sockaddr *)&server_address, sizeof(server_address));
+	this->connected = true;
+	m_Connect_Button.set_label("Disconnect");
 }
 
 void GUIChat::on_msg_entry_submit() {
