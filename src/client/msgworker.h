@@ -3,6 +3,7 @@
 
 #include <gtkmm.h>
 #include <thread>
+#include "../defines.h"
 
 class GUIChat;
 
@@ -12,10 +13,14 @@ public:
 
 	// Thread function
 	void doWork(GUIChat* caller);
-	void getMsg(char* msg_buffer);
+	void getMsg(char* name_buffer, char* msg_buffer);
 
 private:
-	char msg_buffer[512];
+	// char msg_buffer[512];
+	struct {
+		char name[NAME_SIZE];
+		char msg[MSG_SIZE];
+	} msg_buffer;
 };
 
 #endif // GTKMM_MSGWORKER_H

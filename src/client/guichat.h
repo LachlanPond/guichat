@@ -10,6 +10,7 @@
 #include <gtkmm/window.h>
 #include <thread>
 #include "msgworker.h"
+#include "../defines.h"
 
 #define SERVER_PORT 8083
 

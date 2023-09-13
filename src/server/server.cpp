@@ -13,7 +13,10 @@ std::condition_variable new_msg_cv;
 bool new_msg = false;
 bool msg_sent = false;
 std::mutex msg_mutex;
-char msg_buffer[512];
+struct {
+	char name[NAME_SIZE];
+	char msg[MSG_SIZE];
+} msg_buffer;
 
 int main(int argc, char* argv[]) {
 	int client_sockets[MAX_CLIENTS];
@@ -53,20 +56,18 @@ int main(int argc, char* argv[]) {
 
 void handleClient(int client_sock, int client_count) {
 	std::cout << "client thread started" << std::endl;
-	char name_buffer[24];
-	read(client_sock, name_buffer, sizeof(name_buffer));
-	std::cout << "received: " << name_buffer << std::endl;
+	read(client_sock, msg_buffer.name, sizeof(msg_buffer.name));
 
 	while (1) {
-		char msg_buffer_temp[512];
+		char msg_buffer_temp[MSG_SIZE];
 		read(client_sock, msg_buffer_temp, sizeof(msg_buffer_temp));
 
 		std::unique_lock lock(msg_mutex);
-		strcpy(msg_buffer, msg_buffer_temp);
+		strcpy(msg_buffer.msg, msg_buffer_temp);
 		new_msg = true;
 		std::cout << "client thread loaded message to broadcast" << std::endl;
 		lock.unlock();
-		
+
 		new_msg_cv.notify_all();
 	}
 
@@ -85,7 +86,8 @@ void handleBroadcast(int* client_sockets) {
 
 		for (int i = 0; i < MAX_CLIENTS; i++) {
 			if (client_sockets[i] != -1) {
-				::send(client_sockets[i], msg_buffer, sizeof(msg_buffer), 0);
+				::send(client_sockets[i], msg_buffer.name, sizeof(msg_buffer.name), 0);
+				::send(client_sockets[i], msg_buffer.msg, sizeof(msg_buffer.msg), 0);
 			}
 		}
 

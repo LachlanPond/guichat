@@ -133,7 +133,7 @@ void GUIChat::on_connect_button_clicked() {
 	this->connected = true;
 	m_Connect_Button.set_label("Disconnect");
 
-	char name_buffer[24];
+	char name_buffer[NAME_SIZE];
 	std::size_t length = this->name.copy(name_buffer,sizeof(name_buffer)-1,0);
 	name_buffer[length] = '\0';
 	::send(this->client_socket, name_buffer, sizeof(name_buffer), 0);
@@ -148,7 +148,7 @@ void GUIChat::on_connect_button_clicked() {
 
 void GUIChat::on_msg_entry_submit() {
 	Glib::ustring msg;
-	char msg_buffer[512];
+	char msg_buffer[MSG_SIZE];
 	msg = m_Msg_Entry.get_text();
 	m_Msg_Entry.set_text("");
 
@@ -163,7 +163,18 @@ void GUIChat::notify() {
 }
 
 void GUIChat::on_notification_from_worker_thread() {
-	char msg_buffer_temp[512];
-	m_Msg_Worker.getMsg(msg_buffer_temp);
-	GUIChat::sendChatMessage(msg_buffer_temp);
+	char name_buffer_temp[NAME_SIZE];
+	char msg_buffer_temp[MSG_SIZE];
+	char chat_msg_buffer[NAME_SIZE + MSG_SIZE + 2];	// +2 for the ": " added to the message
+
+	// Copy data from the MsgWorker msg_buffer struct to temp variables
+	m_Msg_Worker.getMsg(name_buffer_temp, msg_buffer_temp);
+	int name_length = strlen(name_buffer_temp);
+
+	// Build the message to send to the chat box
+	strcpy(chat_msg_buffer, name_buffer_temp);
+	strcpy(&chat_msg_buffer[name_length], ": ");
+	strcpy(&chat_msg_buffer[name_length+2], msg_buffer_temp);
+	
+	GUIChat::sendChatMessage(chat_msg_buffer);
 }
