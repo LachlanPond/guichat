@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <thread>
 
 GUIChat::GUIChat() : 
@@ -121,13 +122,20 @@ void GUIChat::on_connect_button_clicked() {
 		return;
 	}
 
-	sockaddr_in server_address;
+	struct hostent* server_ip_he;
+	server_ip_he = gethostbyname(this->ip.c_str());
+	if (server_ip_he == NULL) {
+		perror("getbyhostname");
+		GUIChat::sendChatMessage("The server address cannot be resolved", "red");
+		return;
+	}
 
+	sockaddr_in server_address;
 	this->client_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(SERVER_PORT);
-	server_address.sin_addr.s_addr = INADDR_ANY;
+	server_address.sin_addr = *((struct in_addr*)server_ip_he->h_addr);
 
 	connect(this->client_socket, (struct sockaddr *)&server_address, sizeof(server_address));
 	this->connected = true;
