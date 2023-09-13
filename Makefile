@@ -2,9 +2,9 @@
 CXX = g++
 STD = -std=c++20
 
-C_SRC = src/client/client.cpp src/client/guichat.cpp
-C_DEP = src/client/guichat.h
-C_OBJ = client.o guichat.o
+C_SRC = src/client/client.cpp src/client/guichat.cpp src/client/msgworker.cpp
+C_DEP = src/client/guichat.h src/client/msgworker.h
+C_OBJ = client.o guichat.o msgworker.o
 C_EXE = guichat
 C_PKG = `pkg-config --cflags --libs gtkmm-4.0`
 

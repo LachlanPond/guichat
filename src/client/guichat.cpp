@@ -1,8 +1,8 @@
-
 #include "guichat.h"
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <thread>
 
 GUIChat::GUIChat() : 
 	m_VBox(Gtk::Orientation::VERTICAL),
@@ -15,7 +15,10 @@ GUIChat::GUIChat() :
 	m_Msg_Entry(),
 	m_Chat_Frame("Chat"),
 	m_Chat_TextView(),
-	m_Connect_Button("Connect")
+	m_Connect_Button("Connect"),
+	m_Dispatcher(),
+	m_Msg_Worker(),
+	m_MessageReceiveThread(nullptr)
 {
 	set_title("GUIChat");
 	set_default_size(500,600);
@@ -55,6 +58,8 @@ GUIChat::GUIChat() :
 
 	set_default_widget(m_Connect_Button);
 	this->connected = false;
+
+	m_Dispatcher.connect(sigc::mem_fun(*this, &GUIChat::on_notification_from_worker_thread));
 };
 
 void GUIChat::setName(Glib::ustring name) {
@@ -71,6 +76,10 @@ void GUIChat::setIP(Glib::ustring ip) {
 
 Glib::ustring GUIChat::getIP() {
 	return this->ip;
+}
+
+int GUIChat::getClientSocket() {
+	return this->client_socket;
 }
 
 void GUIChat::sendChatMessage(Glib::ustring msg, std::string colour) {
@@ -90,6 +99,7 @@ void GUIChat::sendChatMessage(Glib::ustring msg) {
 void GUIChat::on_connect_button_clicked() {
 	if (this->connected) {
 		::close(this->client_socket);
+		m_MessageReceiveThread->join();
 		m_Connect_Button.set_label("Connect");
 		GUIChat::sendChatMessage("Disconnected from the server", "red");
 		m_Name_Entry.set_editable(true);
@@ -116,7 +126,7 @@ void GUIChat::on_connect_button_clicked() {
 	this->client_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 	server_address.sin_family = AF_INET;
-	server_address.sin_port = htons(8081);
+	server_address.sin_port = htons(SERVER_PORT);
 	server_address.sin_addr.s_addr = INADDR_ANY;
 
 	connect(this->client_socket, (struct sockaddr *)&server_address, sizeof(server_address));
@@ -131,6 +141,8 @@ void GUIChat::on_connect_button_clicked() {
 	m_Name_Entry.set_editable(false);
 	m_IP_Entry.set_editable(false);
 
+	m_MessageReceiveThread = new std::thread([this]{m_Msg_Worker.doWork(this);});
+
 	GUIChat::sendChatMessage("Connected to the server (" + this->ip + ")", "green");
 }
 
@@ -140,10 +152,18 @@ void GUIChat::on_msg_entry_submit() {
 	msg = m_Msg_Entry.get_text();
 	m_Msg_Entry.set_text("");
 
-	std::size_t length = this->name.copy(msg_buffer,sizeof(msg_buffer),0);
+	std::size_t length = msg.copy(msg_buffer,sizeof(msg_buffer),0);
 	msg_buffer[length] = '\0';
 
 	::send(this->client_socket, msg_buffer, sizeof(msg_buffer), 0);
+}
 
-	// GUIChat::sendChatMessage(this->name + ": " + msg);
+void GUIChat::notify() {
+	m_Dispatcher.emit();
+}
+
+void GUIChat::on_notification_from_worker_thread() {
+	char msg_buffer_temp[512];
+	m_Msg_Worker.getMsg(msg_buffer_temp);
+	GUIChat::sendChatMessage(msg_buffer_temp);
 }
