@@ -131,16 +131,26 @@ void GUIChat::on_connect_button_clicked() {
 	}
 
 	sockaddr_in server_address;
-	this->client_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if ((this->client_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		perror("socket");
+		GUIChat::sendChatMessage("Socket creation failed", "red");
+		return;
+	}
 
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(SERVER_PORT);
 	server_address.sin_addr = *((struct in_addr*)server_ip_he->h_addr);
 
-	connect(this->client_socket, (struct sockaddr *)&server_address, sizeof(server_address));
+	if ((connect(this->client_socket, (struct sockaddr *)&server_address, sizeof(server_address))) == -1) {
+		perror("connect");
+		GUIChat::sendChatMessage("Could not connect to the server", "red");
+		return;
+	}
+	GUIChat::sendChatMessage("Connected to the server (" + this->ip + ")", "green");
 	this->connected = true;
 	m_Connect_Button.set_label("Disconnect");
 
+	// Send the username to the server
 	char name_buffer[NAME_SIZE];
 	std::size_t length = this->name.copy(name_buffer,sizeof(name_buffer)-1,0);
 	name_buffer[length] = '\0';
@@ -149,9 +159,8 @@ void GUIChat::on_connect_button_clicked() {
 	m_Name_Entry.set_editable(false);
 	m_IP_Entry.set_editable(false);
 
+	// Create worker thread to listen for messages coming from the server
 	m_MessageReceiveThread = new std::thread([this]{m_Msg_Worker.doWork(this);});
-
-	GUIChat::sendChatMessage("Connected to the server (" + this->ip + ")", "green");
 }
 
 void GUIChat::on_msg_entry_submit() {
