@@ -99,7 +99,7 @@ void GUIChat::sendChatMessage(Glib::ustring msg) {
 // Event functions
 void GUIChat::on_connect_button_clicked() {
 	if (this->connected) {
-		::close(this->client_socket);
+		::shutdown(this->client_socket, SHUT_RDWR);
 		m_MessageReceiveThread->join();
 		m_Connect_Button.set_label("Connect");
 		GUIChat::sendChatMessage("Disconnected from the server", "red");

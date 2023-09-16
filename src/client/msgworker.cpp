@@ -7,7 +7,9 @@ MsgWorker::MsgWorker() {}
 
 void MsgWorker::doWork(GUIChat* caller) {
 	while (1) {
-		read(caller->getClientSocket(), this->msg_buffer.name, sizeof(this->msg_buffer.name));
+		if (read(caller->getClientSocket(), this->msg_buffer.name, sizeof(this->msg_buffer.name)) == 0) {
+			return;
+		}
 		read(caller->getClientSocket(), this->msg_buffer.msg, sizeof(this->msg_buffer.msg));
 		caller->notify();
 	}
